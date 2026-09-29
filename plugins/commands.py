@@ -80,7 +80,63 @@ def _rich_nav_buttons(username, enabled):
     ])
 
 
-def build_start_html(name, username, premium=True):
+
+async def get_total_users():
+    """Return the project's registered-user count without assuming one DB API.
+
+    Different database revisions use different method names, so prefer the
+    project's existing count/list methods and fall back to get_stats().
+    """
+    # Direct async/sync count methods used by common database revisions.
+    for method_name in ("get_total_users", "get_user_count", "count_users"):
+        method = getattr(db, method_name, None)
+        if method is not None:
+            try:
+                value = method()
+                if hasattr(value, "__await__"):
+                    value = await value
+                return int(value or 0)
+            except Exception:
+                pass
+
+    # A list-returning method is also a reliable source of the count.
+    method = getattr(db, "get_all_user_ids", None)
+    if method is not None:
+        try:
+            value = method()
+            if hasattr(value, "__await__"):
+                value = await value
+            return len(value or [])
+        except Exception:
+            pass
+
+    # Existing get_stats() implementations commonly expose total_users.
+    method = getattr(db, "get_stats", None)
+    if method is not None:
+        try:
+            value = method()
+            if hasattr(value, "__await__"):
+                value = await value
+            if isinstance(value, dict):
+                return int(value.get("total_users", value.get("users", 0)) or 0)
+        except Exception:
+            pass
+
+    # Last-resort fallback for DB revisions that expose a users collection.
+    for attr_name in ("users", "user_ids"):
+        value = getattr(db, attr_name, None)
+        if value is not None:
+            try:
+                if hasattr(value, "__await__"):
+                    value = await value
+                return len(value or [])
+            except Exception:
+                pass
+
+    return 0
+
+
+def build_start_html(name, username, premium=True, total_users=0):
     n = escape(name or "there")
     title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
     feature_rows = [
@@ -95,8 +151,9 @@ def build_start_html(name, username, premium=True):
         _slide_html(),
         f'<b>{title}</b>\n\n',
         f'\n<i>Fast • clean • secure join-request processing</i>',        
-        f'\n{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',        
-        '\n\nManage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
+        f'\n{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',
+        f'{_user_emoji("👥", premium)} <b>Total Users:</b> <code>{int(total_users):,}</code>\n',
+        '\nManage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
         '<details open><summary><b>LIVE FEATURES</b></summary>',
         rich_table(["Feature", "What it does"], rows, raw=True),
         '</details>',
@@ -272,11 +329,13 @@ async def start_message(c, m):
         await db.touch_user(m.from_user.id, m.from_user.first_name)
 
     enabled = await premium_enabled(db)
-    html = build_start_html(m.from_user.first_name or "there", c.username, enabled)
+    total_users = await get_total_users()
+    html = build_start_html(m.from_user.first_name or "there", c.username, enabled, total_users)
     fallback = RichText(enabled)
     fallback.line("💎 SYNAX JOIN REQUEST HUB", MessageEntityType.BOLD)
     fallback.line("")
     fallback.line(f"👋 Welcome {m.from_user.first_name or 'there'}!")
+    fallback.line(f"👥 Total Users: {total_users:,}")
     fallback.line("Open Help for Login, Accept and Stats.")
     await safe_send_rich(c, m.chat.id, html, fallback=fallback.build(), reply_markup=start_keyboard(c.username))
 
