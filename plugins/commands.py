@@ -80,28 +80,9 @@ def _rich_nav_buttons(username, enabled):
     ])
 
 
-def _rich_small(text):
-    """Render compact helper text in Rich Message markup."""
-    return f"<small>{text}</small>"
-
-
-def _rich_quote(text):
-    """Render a compact quoted Rich Message block."""
-    return f"<blockquote>{_rich_small(text)}</blockquote>"
-
-
 def build_start_html(name, username, premium=True):
     n = escape(name or "there")
-    bot_username = (username or "RequestApprovalBot").lstrip("@")
-
-    # Keep the hero area compact: title -> fast subtitle -> one-line welcome.
     title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
-    fast_line = (
-        f'{_user_emoji("⚡", premium)} '
-        f'<i>Fast • clean • secure join-request processing</i>'
-    )
-    welcome_line = f'{_user_emoji("👋", premium)} <b>Welcome, {n}!</b>'
-
     feature_rows = [
         (_user_emoji("🚀", premium), "Fast pending-request approval"),
         (_user_emoji("🔗", premium), "Channel + Group workflow"),
@@ -109,35 +90,19 @@ def build_start_html(name, username, premium=True):
         (_user_emoji("✨", premium), "Native Telegram Rich Message UI"),
         (_user_emoji("🔒", premium), "Protected login/session flow"),
     ]
-
+    rows = [(a, b) for a, b in feature_rows]
     html = [
         _slide_html(),
+        f'<b>{title}</b>\n',
+        
+        f'\n<i>Fast • clean • secure join-request processing</i>',
 
-        # Clean one-line title.
-        f'{title}\n',
-
-        # Small Rich text line for the "Fast" description.
-        f'{_rich_small(fast_line)}\n',
-
-        # Welcome stays on one compact line.
-        f'{welcome_line}\n',
-
-        # Management description is now a small quoted Rich block.
-        _rich_quote(
-            f'{_user_emoji("📝", premium)} '
-            f'<b>Manage</b> pending join requests from your own Telegram account '
-            f'with a structured, swipeable and interactive interface.'
-        ),
-
-        # Rich feature box/table remains intact.
+        f'\n{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',
+        '\n\nManage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
         '<details open><summary><b>LIVE FEATURES</b></summary>',
-        _rich_small("A compact overview of the main request-processing features."),
-        rich_table(["Feature", "What it does"], feature_rows, raw=True),
+        rich_table(["Feature", "What it does"], rows, raw=True),
         '</details>',
-
-        # Rich account-flow box/table remains intact.
         '<details><summary><b>ACCOUNT FLOW</b></summary>',
-        _rich_small("Simple 4-step flow from login to the final target report."),
         rich_table(["Step", "Action"], [
             (f'{_user_emoji("1️⃣", premium)} 01', 'Open Help'),
             (f'{_user_emoji("2️⃣", premium)} 02', 'Login your Telegram account'),
@@ -145,70 +110,22 @@ def build_start_html(name, username, premium=True):
             (f'{_user_emoji("4️⃣", premium)} 04', 'Receive that target chat\'s final report'),
         ], raw=True),
         '</details>',
-
-        # Small quoted note instead of a large standalone sentence.
-        _rich_quote(
-            f'{_user_emoji("✨", premium)} '
-            f'<b>All main actions</b> are available through Telegram Rich Message buttons.'
-        ),
-
-        # Existing action rows are preserved.
+        '<b>All main actions are now inside Telegram Rich Message buttons.</b>\n',
         rich_button_row(*[
-            rich_button(
-                "Help",
-                emoji="❓",
-                data="cmd:help",
-                style="primary",
-                premium=premium,
-            ),
-            rich_button(
-                "Shop",
-                emoji="🤖",
-                kind="url",
-                url="https://t.me/ShopSynax",
-                style="primary",
-                premium=premium,
-            ),
+            rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
+            rich_button("Shop", emoji="🤖", kind="url", url="https://t.me/ShopSynax", style="primary", premium=premium),
         ]),
         rich_button_row(*[
-            rich_button(
-                "Update Channel",
-                emoji="📢",
-                kind="url",
-                url="https://t.me/synaxbotz",
-                style="success",
-                premium=premium,
-            ),
-            rich_button(
-                "Support Group",
-                emoji="📢",
-                kind="url",
-                url="https://t.me/synaxsupport",
-                style="success",
-                premium=premium,
-            ),
+            rich_button("Update Channel", emoji="📢", kind="url", url="https://t.me/synaxbotz", style="success", premium=premium),
+            rich_button("Support Group", emoji="📢", kind="url", url="https://t.me/synaxsupport", style="success", premium=premium),
         ]),
         rich_button_row(*[
-            rich_button(
-                "Add To Channel",
-                emoji="➕",
-                kind="url",
-                url=f"https://t.me/{bot_username}?startchannel=true",
-                style="danger",
-                premium=premium,
-            ),
-            rich_button(
-                "Add To Group",
-                emoji="➕",
-                kind="url",
-                url=f"https://t.me/{bot_username}?startgroup=true",
-                style="danger",
-                premium=premium,
-            ),
+            rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startchannel=true", style="danger", premium=premium),
+            rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startgroup=true", style="danger", premium=premium),
         ]),
     ]
-
     return "".join(html)
+
 
 def build_help_html(username, premium=True):
     username = (username or "RequestApprovalBot").lstrip("@")
