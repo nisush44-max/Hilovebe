@@ -85,6 +85,11 @@ def _compact_quote(text):
     return f"<blockquote><i>{escape(str(text))}</i></blockquote>"
 
 
+def _micro(text):
+    """Small rich-text helper for dense UI copy."""
+    return f"<small>{text}</small>"
+
+
 def _section(title, body, open_=False):
     """Small Rich Message accordion section."""
     opened = " open" if open_ else ""
@@ -100,45 +105,47 @@ def _footer(premium=True):
 
 def build_start_html(name, username, premium=True):
     n = escape(name or "there")
-    title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
-    feature_rows = [
-        (_user_emoji("⚡", premium), "<b>Fast approval</b>", "Process pending requests quickly"),
-        (_user_emoji("🔗", premium), "<b>Channel + Group</b>", "Works with your selected target"),
-        (_user_emoji("📊", premium), "<b>Live stats</b>", "See target and account results"),
-        (_user_emoji("✨", premium), "<b>Rich interface</b>", "Native buttons, quotes & sections"),
-    ]
 
-    feature_body = rich_table(
-        ["Feature", "Details"],
-        [(f"{a} {b}", c) for a, b, c in feature_rows],
-        raw=True,
+    # Keep every primary line on its own visual block. Telegram's rich renderer
+    # can collapse plain newlines, so explicit block tags are used here.
+    title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
+    subtitle = _micro('<i>Fast · clean · secure join-request processing</i>')
+    welcome = f'{_user_emoji("👋", premium)} <b>Welcome, {n}!</b>'
+
+    # Compact feature list: more useful information, but deliberately small so
+    # the start card does not become a huge table.
+    feature_body = (
+        _micro(
+            f'{_user_emoji("⚡", premium)} <b>Fast approval</b> · process pending requests quickly<br>'
+            f'{_user_emoji("🎯", premium)} <b>Smart target</b> · work on one selected channel/group<br>'
+            f'{_user_emoji("🛡️", premium)} <b>Safe session</b> · protected Telegram account flow<br>'
+            f'{_user_emoji("📊", premium)} <b>Live stats</b> · target + account result tracking<br>'
+            f'{_user_emoji("⚙️", premium)} <b>Flood handling</b> · waits and retry flow handled automatically<br>'
+            f'{_user_emoji("✨", premium)} <b>Rich UI</b> · buttons, quotes, sections & premium emojis'
+        )
     )
 
-    flow_body = rich_table(
-        ["", "Action"],
-        [
-            (f'{_user_emoji("01️⃣", premium)}', "Open Help"),
-            (f'{_user_emoji("02️⃣", premium)}', "Login your Telegram account"),
-            (f'{_user_emoji("03️⃣", premium)}', "Select one target chat"),
-            (f'{_user_emoji("04️⃣", premium)}', "Accept requests + receive report"),
-        ],
-        raw=True,
+    flow_body = _micro(
+        f'{_user_emoji("01️⃣", premium)} <b>Help</b> → open control center<br>'
+        f'{_user_emoji("02️⃣", premium)} <b>Login</b> → connect your Telegram account<br>'
+        f'{_user_emoji("03️⃣", premium)} <b>Accept</b> → choose one target chat<br>'
+        f'{_user_emoji("04️⃣", premium)} <b>Report</b> → receive the target result'
     )
 
     return "".join([
         _slide_html(),
-        f'{title}\n',
-        f'<i>Fast · clean · secure join-request processing</i>\n\n',
-        f'{_user_emoji("👋", premium)} <b>Welcome, {n}!</b>\n',
+        f'<div>{title}</div>',
+        f'<div>{subtitle}</div>',
+        f'<div>{welcome}</div>',
         _compact_quote(
             "Manage pending join requests from your own Telegram account. "
-            "Choose one target, process it, and get a focused result report."
+            "Select one target, process it, and receive a focused result report."
         ),
-        _section("✦ LIVE FEATURES", feature_body, open_=True),
+        _section("✦ LIVE FEATURES  ·  06 CORE", feature_body, open_=True),
         "\n",
-        _section("⌁ ACCOUNT FLOW", flow_body),
+        _section("⌁ ACCOUNT FLOW  ·  04 STEPS", flow_body),
         "\n",
-        _compact_quote("All main actions are inside the Rich Message controls below."),
+        _compact_quote("<b>Quick controls</b> · everything important is available below."),
         rich_button_row(*[
             rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
             rich_button("Shop", emoji="🤖", kind="url", url="https://t.me/ShopSynax", style="primary", premium=premium),
@@ -191,7 +198,7 @@ def build_help_html(username, premium=True):
 
     return "".join([
         f'{_user_emoji("❓", premium)} <b>HELP • CONTROL CENTER</b>\n',
-        '<i>Everything you need, kept short and easy to scan.</i>\n\n',
+        _micro('<i>Everything you need, kept short and easy to scan.</i>') + '<br><br>',
         _compact_quote("Use the buttons below for the main actions. No long command hunting."),
         _section("01 · HOW TO USE", how_body, open_=True),
         "\n",
@@ -236,7 +243,7 @@ def build_action_html(title, body, premium=True):
     icon = "🚀" if "Accept" in title else "🔐" if "Login" in title else "⚙️"
     return "".join([
         f'{_user_emoji(icon, premium)} <b>{escape(title)}</b>\n',
-        '<i>Action center</i>\n\n',
+        _micro('<i>Action center</i>') + '<br><br>',
         _compact_quote(body),
         rich_button_row(
             rich_button("Help", emoji="❓", data="cmd:help", style="link", premium=premium),
@@ -266,7 +273,7 @@ def build_stats_html(stats, title="Today's Join Request Stats", premium=True):
 
     return "".join([
         f'{_user_emoji("📊", premium)} <b>{escape(title)}</b>\n',
-        '<i>Today · this account only</i>\n\n',
+        _micro('<i>Today · this account only</i>') + '<br><br>',
         body,
         "\n",
         _compact_quote(
@@ -351,7 +358,7 @@ def build_progress_html(attempted, success, dead, error, elapsed, premium=True):
 
     return "".join([
         f'{_user_emoji("⚡", premium)} <b>PROCESSING JOIN REQUESTS</b>\n',
-        '<i>Live progress · selected target only</i>\n\n',
+        _micro('<i>Live progress · selected target only</i>') + '<br><br>',
         _compact_quote("The counters below update while requests are being processed."),
         progress_body,
         "\n",
