@@ -81,8 +81,14 @@ def _rich_nav_buttons(username, enabled):
 
 
 def _compact_quote(text):
-    """Compact quote used for secondary/microcopy so the card stays clean."""
-    return f"<blockquote><i>{escape(str(text))}</i></blockquote>"
+    """Compact quote. Preserve intentional Rich/HTML line breaks and tags."""
+    text = str(text)
+    # Internal UI strings may intentionally contain these formatting tags.
+    safe = escape(text)
+    for tag in ("br", "b", "i", "u", "s", "code", "tg-spoiler"):
+        safe = safe.replace(f"&lt;{tag}&gt;", f"<{tag}>")
+        safe = safe.replace(f"&lt;/{tag}&gt;", f"</{tag}>")
+    return f"<blockquote><i>{safe}</i></blockquote>"
 
 
 def _micro(text):
@@ -134,17 +140,29 @@ def build_start_html(name, username, premium=True):
 
     return "".join([
         _slide_html(),
-        f'<div>{title}</div>',
-        f'<div>{subtitle}</div>',
-        f'<div>{welcome}</div>',
+
+        # Each visual block is separated with an explicit <br>. The Rich
+        # renderer used by this bot does not reliably treat plain \n as a
+        # visual paragraph break, and <div> is not part of its supported
+        # Telegram-style formatting subset.
+        title,
+        "<br>",
+        subtitle,
+        "<br>",
+        welcome,
+        "<br><br>",
+
         _compact_quote(
-            "Manage pending join requests from your own Telegram account. "
+            "Manage pending join requests from your own Telegram account.<br>"
             "Select one target, process it, and receive a focused result report."
         ),
+        "<br>",
+
         _section("✦ LIVE FEATURES  ·  06 CORE", feature_body, open_=True),
-        "\n",
+        "<br>",
         _section("⌁ ACCOUNT FLOW  ·  04 STEPS", flow_body),
-        "\n",
+        "<br>",
+
         _compact_quote("<b>Quick controls</b> · everything important is available below."),
         rich_button_row(*[
             rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
