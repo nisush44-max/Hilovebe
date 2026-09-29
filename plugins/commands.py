@@ -95,7 +95,9 @@ def build_start_html(name, username, premium=True):
         _slide_html(),
         f'<b>{title}</b>\n',
         f'\n<i>Fast • clean • secure join-request processing</i>',
+        
         f'\n{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',
+        
         '\n\nManage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
         '<details open><summary><b>LIVE FEATURES</b></summary>',
         rich_table(["Feature", "What it does"], rows, raw=True),
