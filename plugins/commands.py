@@ -80,195 +80,180 @@ def _rich_nav_buttons(username, enabled):
     ])
 
 
-def _compact_quote(text):
-    """Compact quote. Preserve intentional Rich/HTML line breaks and tags."""
-    text = str(text)
-    # Internal UI strings may intentionally contain these formatting tags.
-    safe = escape(text)
-    for tag in ("br", "b", "i", "u", "s", "code", "tg-spoiler"):
-        safe = safe.replace(f"&lt;{tag}&gt;", f"<{tag}>")
-        safe = safe.replace(f"&lt;/{tag}&gt;", f"</{tag}>")
-    return f"<blockquote><i>{safe}</i></blockquote>"
-
-
-def _micro(text):
-    """Small rich-text helper for dense UI copy."""
+def _rich_small(text):
+    """Render compact helper text in Rich Message markup."""
     return f"<small>{text}</small>"
 
 
-def _section(title, body, open_=False):
-    """Small Rich Message accordion section."""
-    opened = " open" if open_ else ""
-    return f"<details{opened}><summary><b>{escape(title)}</b></summary>{body}</details>"
-
-
-def _footer(premium=True):
-    return (
-        f'{_user_emoji("✨", premium)} '
-        f'<i>Powered by <b>Synax</b> • Fast · clean · secure</i>'
-    )
+def _rich_quote(text):
+    """Render a compact quoted Rich Message block."""
+    return f"<blockquote>{_rich_small(text)}</blockquote>"
 
 
 def build_start_html(name, username, premium=True):
     n = escape(name or "there")
+    bot_username = (username or "RequestApprovalBot").lstrip("@")
 
-    # Keep every primary line on its own visual block. Telegram's rich renderer
-    # can collapse plain newlines, so explicit block tags are used here.
+    # Keep the hero area compact: title -> fast subtitle -> one-line welcome.
     title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
-    subtitle = _micro('<i>Fast · clean · secure join-request processing</i>')
-    welcome = f'{_user_emoji("👋", premium)} <b>Welcome, {n}!</b>'
-
-    # Compact feature list: more useful information, but deliberately small so
-    # the start card does not become a huge table.
-    feature_body = (
-        _micro(
-            f'{_user_emoji("⚡", premium)} <b>Fast approval</b> · process pending requests quickly<br>'
-            f'{_user_emoji("🎯", premium)} <b>Smart target</b> · work on one selected channel/group<br>'
-            f'{_user_emoji("🛡️", premium)} <b>Safe session</b> · protected Telegram account flow<br>'
-            f'{_user_emoji("📊", premium)} <b>Live stats</b> · target + account result tracking<br>'
-            f'{_user_emoji("⚙️", premium)} <b>Flood handling</b> · waits and retry flow handled automatically<br>'
-            f'{_user_emoji("✨", premium)} <b>Rich UI</b> · buttons, quotes, sections & premium emojis'
-        )
+    fast_line = (
+        f'{_user_emoji("⚡", premium)} '
+        f'<i>Fast • clean • secure join-request processing</i>'
     )
+    welcome_line = f'{_user_emoji("👋", premium)} <b>Welcome, {n}!</b>'
 
-    flow_body = _micro(
-        f'{_user_emoji("01️⃣", premium)} <b>Help</b> → open control center<br>'
-        f'{_user_emoji("02️⃣", premium)} <b>Login</b> → connect your Telegram account<br>'
-        f'{_user_emoji("03️⃣", premium)} <b>Accept</b> → choose one target chat<br>'
-        f'{_user_emoji("04️⃣", premium)} <b>Report</b> → receive the target result'
-    )
+    feature_rows = [
+        (_user_emoji("🚀", premium), "Fast pending-request approval"),
+        (_user_emoji("🔗", premium), "Channel + Group workflow"),
+        (_user_emoji("📊", premium), "Per-account live statistics"),
+        (_user_emoji("✨", premium), "Native Telegram Rich Message UI"),
+        (_user_emoji("🔒", premium), "Protected login/session flow"),
+    ]
 
-    return "".join([
+    html = [
         _slide_html(),
 
-        # Each visual block is separated with an explicit <br>. The Rich
-        # renderer used by this bot does not reliably treat plain \n as a
-        # visual paragraph break, and <div> is not part of its supported
-        # Telegram-style formatting subset.
-        title,
-        "<br>",
-        subtitle,
-        "<br>",
-        welcome,
-        "<br><br>",
+        # Clean one-line title.
+        f'{title}\n',
 
-        _compact_quote(
-            "Manage pending join requests from your own Telegram account.<br>"
-            "Select one target, process it, and receive a focused result report."
+        # Small Rich text line for the "Fast" description.
+        f'{_rich_small(fast_line)}\n',
+
+        # Welcome stays on one compact line.
+        f'{welcome_line}\n',
+
+        # Management description is now a small quoted Rich block.
+        _rich_quote(
+            f'{_user_emoji("📝", premium)} '
+            f'<b>Manage</b> pending join requests from your own Telegram account '
+            f'with a structured, swipeable and interactive interface.'
         ),
-        "<br>",
 
-        _section("✦ LIVE FEATURES  ·  06 CORE", feature_body, open_=True),
-        "<br>",
-        _section("⌁ ACCOUNT FLOW  ·  04 STEPS", flow_body),
-        "<br>",
+        # Rich feature box/table remains intact.
+        '<details open><summary><b>LIVE FEATURES</b></summary>',
+        _rich_small("A compact overview of the main request-processing features."),
+        rich_table(["Feature", "What it does"], feature_rows, raw=True),
+        '</details>',
 
-        _compact_quote("<b>Quick controls</b> · everything important is available below."),
+        # Rich account-flow box/table remains intact.
+        '<details><summary><b>ACCOUNT FLOW</b></summary>',
+        _rich_small("Simple 4-step flow from login to the final target report."),
+        rich_table(["Step", "Action"], [
+            (f'{_user_emoji("1️⃣", premium)} 01', 'Open Help'),
+            (f'{_user_emoji("2️⃣", premium)} 02', 'Login your Telegram account'),
+            (f'{_user_emoji("3️⃣", premium)} 03', 'Accept requests from one target chat'),
+            (f'{_user_emoji("4️⃣", premium)} 04', 'Receive that target chat\'s final report'),
+        ], raw=True),
+        '</details>',
+
+        # Small quoted note instead of a large standalone sentence.
+        _rich_quote(
+            f'{_user_emoji("✨", premium)} '
+            f'<b>All main actions</b> are available through Telegram Rich Message buttons.'
+        ),
+
+        # Existing action rows are preserved.
         rich_button_row(*[
-            rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
-            rich_button("Shop", emoji="🤖", kind="url", url="https://t.me/ShopSynax", style="primary", premium=premium),
-        ]),
-        rich_button_row(*[
-            rich_button("Update Channel", emoji="📢", kind="url", url="https://t.me/synaxbotz", style="success", premium=premium),
-            rich_button("Support Group", emoji="💬", kind="url", url="https://t.me/synaxsupport", style="success", premium=premium),
+            rich_button(
+                "Help",
+                emoji="❓",
+                data="cmd:help",
+                style="primary",
+                premium=premium,
+            ),
+            rich_button(
+                "Shop",
+                emoji="🤖",
+                kind="url",
+                url="https://t.me/ShopSynax",
+                style="primary",
+                premium=premium,
+            ),
         ]),
         rich_button_row(*[
             rich_button(
-                "Add To Channel", emoji="➕", kind="url",
-                url=f"https://t.me/{username.lstrip('@')}?startchannel=true",
-                style="danger", premium=premium
+                "Update Channel",
+                emoji="📢",
+                kind="url",
+                url="https://t.me/synaxbotz",
+                style="success",
+                premium=premium,
             ),
             rich_button(
-                "Add To Group", emoji="➕", kind="url",
-                url=f"https://t.me/{username.lstrip('@')}?startgroup=true",
-                style="danger", premium=premium
+                "Support Group",
+                emoji="📢",
+                kind="url",
+                url="https://t.me/synaxsupport",
+                style="success",
+                premium=premium,
             ),
         ]),
-        "\n",
-        _footer(premium),
-    ])
+        rich_button_row(*[
+            rich_button(
+                "Add To Channel",
+                emoji="➕",
+                kind="url",
+                url=f"https://t.me/{bot_username}?startchannel=true",
+                style="danger",
+                premium=premium,
+            ),
+            rich_button(
+                "Add To Group",
+                emoji="➕",
+                kind="url",
+                url=f"https://t.me/{bot_username}?startgroup=true",
+                style="danger",
+                premium=premium,
+            ),
+        ]),
+    ]
 
+    return "".join(html)
 
 def build_help_html(username, premium=True):
     username = (username or "RequestApprovalBot").lstrip("@")
-
-    how_body = rich_table(
-        ["", "Do this"],
-        [
-            (f'{_user_emoji("01️⃣", premium)}', "Add the bot as admin to the target chat."),
-            (f'{_user_emoji("02️⃣", premium)}', "Press Login and connect your Telegram account."),
-            (f'{_user_emoji("03️⃣", premium)}', "Press Accept and forward one target message."),
-            (f'{_user_emoji("04️⃣", premium)}', "The bot processes only that selected target."),
-            (f'{_user_emoji("05️⃣", premium)}', "Receive that target's individual result report."),
-        ],
-        raw=True,
-    )
-
-    commands_body = rich_table(
-        ["Command", "Purpose"],
-        [
-            ("/login", "Connect Telegram account"),
-            ("/accept", "Process one selected target chat"),
-            ("/mystats", "Show today's account stats"),
-            ("/logout", "Remove saved session"),
-        ],
-    )
-
     return "".join([
-        f'{_user_emoji("❓", premium)} <b>HELP • CONTROL CENTER</b>\n',
-        _micro('<i>Everything you need, kept short and easy to scan.</i>') + '<br><br>',
-        _compact_quote("Use the buttons below for the main actions. No long command hunting."),
-        _section("01 · HOW TO USE", how_body, open_=True),
-        "\n",
-        _section("02 · COMMANDS", commands_body),
-        "\n",
-        _section(
-            "03 · RICH CONTROLS",
-            _compact_quote(
-                "Buttons use native Rich Message styling. "
-                "Premium custom emojis are used when enabled."
-            ),
-            open_=True,
-        ),
-        "\n",
+        '<b>', _user_emoji("❓", premium), ' <b>HELP • CONTROL CENTER</b></b>\n',
+        '<i>The old Login / Accept / Stats row is intentionally moved here.</i>\n',
+        '<details open><summary><b>HOW TO USE</b></summary>',
+        rich_table(["Step", "Do this"], [
+            (f'{_user_emoji("1️⃣", premium)}', 'Add the bot as admin to the target channel/group.'),
+            (f'{_user_emoji("2️⃣", premium)}', 'Press Login and connect your Telegram account.'),
+            (f'{_user_emoji("3️⃣", premium)}', 'Press Accept and forward one message from the target chat.'),
+            (f'{_user_emoji("4️⃣", premium)}', 'The bot processes only that selected target.'),
+            (f'{_user_emoji("5️⃣", premium)}', 'After completion, you receive that target\'s individual result report.'),
+        ], raw=True),
+        '</details>',
+        '<details><summary><b>COMMANDS</b></summary>',
+        rich_table(["Command", "Purpose"], [
+            ('/login', 'Connect Telegram account'),
+            ('/accept', 'Process one selected target chat'),
+            ('/mystats', 'Show today\'s account stats'),
+            ('/logout', 'Remove saved session'),
+        ]),
+        '</details>',
+        '<b>Rich controls</b> use native Telegram buttons with optional custom-emoji icons and button styles.\n',
         rich_button_row(
             rich_button("Login", emoji="🔐", data="cmd:login", style="success", premium=premium),
             rich_button("Accept", emoji="🚀", data="cmd:accept", style="primary", premium=premium),
-            rich_button("Stats", emoji="📊", data="cmd:stats", style="link", premium=premium),
+            rich_button("Stats", emoji="📊", data="cmd:stats", style="danger", premium=premium),
         ),
         rich_button_row(
-            rich_button(
-                "Add To Channel", emoji="➕", kind="url",
-                url=f"https://t.me/{username}?startchannel=true",
-                style="success", premium=premium
-            ),
-            rich_button(
-                "Add To Group", emoji="➕", kind="url",
-                url=f"https://t.me/{username}?startgroup=true",
-                style="success", premium=premium
-            ),
+            rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username}?startchannel=true", style="success", premium=premium),
+            rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username}?startgroup=true", style="success", premium=premium),
         ),
         rich_button_row(
-            rich_button("Support", emoji="💬", kind="url", url="https://t.me/SynaxSupport", style="danger", premium=premium),
+            rich_button("Support", emoji="📢", kind="url", url="https://t.me/SynaxSupport", style="danger", premium=premium),
             rich_button("Updates", emoji="📢", kind="url", url="https://t.me/SynaxBotz", style="danger", premium=premium),
         ),
-        "\n",
-        _footer(premium),
     ])
 
 
 def build_action_html(title, body, premium=True):
-    icon = "🚀" if "Accept" in title else "🔐" if "Login" in title else "⚙️"
     return "".join([
-        f'{_user_emoji(icon, premium)} <b>{escape(title)}</b>\n',
-        _micro('<i>Action center</i>') + '<br><br>',
-        _compact_quote(body),
-        rich_button_row(
-            rich_button("Help", emoji="❓", data="cmd:help", style="link", premium=premium),
-            rich_button("Stats", emoji="📊", data="cmd:stats", style="link", premium=premium),
-        ),
-        "\n",
-        _footer(premium),
+        f'<b>{_user_emoji("🚀" if "Accept" in title else "🔐", premium)} <b>{escape(title)}</b></b>\n',
+        f'{escape(body)}\n',
+        rich_button_row(rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium)),
     ])
 
 
@@ -277,111 +262,66 @@ def build_stats_html(stats, title="Today's Join Request Stats", premium=True):
     success = int(stats.get("success", 0))
     dead = int(stats.get("dead", 0))
     error = int(stats.get("error", 0))
-
-    body = rich_table(
-        ["Status", "Count"],
-        [
+    return "".join([
+        f'<b>{_user_emoji("📊", premium)} <b>{escape(title)}</b></b>\n',
+        rich_table(["Status", "Count"], [
             (f'{_user_emoji("📨", premium)} Total', total),
             (f'{_user_emoji("✅", premium)} Success', success),
             (f'{_user_emoji("💀", premium)} Dead', dead),
             (f'{_user_emoji("⚠️", premium)} Error', error),
-        ],
-        raw=True,
-    )
-
-    return "".join([
-        f'{_user_emoji("📊", premium)} <b>{escape(title)}</b>\n',
-        _micro('<i>Today · this account only</i>') + '<br><br>',
-        body,
-        "\n",
-        _compact_quote(
-            "These numbers belong to your account. "
-            "Target reports are kept separate from the overall account totals."
-        ),
-        _section(
-            "ACCOUNT STATUS",
-            _compact_quote(
-                f"Rich UI: {'Premium custom emojis enabled' if premium else 'Normal emoji mode'}"
-            ),
-        ),
-        "\n",
+        ], raw=True),
+        '<details><summary><b>ACCOUNT STATUS</b></summary>',
+        f'{_user_emoji("💎", premium)} <b>Rich UI:</b> {"Premium custom emojis" if premium else "Normal emoji mode"}\n',
+        '</details>',
         rich_button_row(
-            rich_button("Accept", emoji="🚀", data="cmd:accept", style="primary", premium=premium),
             rich_button("Help", emoji="❓", data="cmd:help", style="link", premium=premium),
+            rich_button("Accept", emoji="🚀", data="cmd:accept", style="primary", premium=premium),
         ),
-        "\n",
-        _footer(premium),
     ])
 
 
 def build_accept_report_html(result, seconds, chat_title, chat_type, stats, premium=True):
     title = escape(chat_title or "Unknown Chat")
-
-    target_body = rich_table(
-        ["Metric", "Result"],
-        [
-            (f'{_user_emoji("📨", premium)} Attempted', result.get("attempted", 0)),
-            (f'{_user_emoji("✅", premium)} Success', result.get("success", 0)),
-            (f'{_user_emoji("💀", premium)} Dead', result.get("dead", 0)),
-            (f'{_user_emoji("⚠️", premium)} Error', result.get("error", 0)),
-            (f'{_user_emoji("⏱", premium)} Time', f"{seconds}s"),
-        ],
-        raw=True,
-    )
-
-    account_body = rich_table(
-        ["Metric", "Count"],
-        [
-            (f'{_user_emoji("📊", premium)} Total', stats.get("total", 0)),
-            (f'{_user_emoji("✅", premium)} Success', stats.get("success", 0)),
-            (f'{_user_emoji("💀", premium)} Dead', stats.get("dead", 0)),
-            (f'{_user_emoji("⚠️", premium)} Error', stats.get("error", 0)),
-        ],
-        raw=True,
-    )
-
     return "".join([
-        f'{_user_emoji("🎉", premium)} <b>ACCEPT COMPLETE</b>\n',
-        f'<i>{_user_emoji("📣", premium)} Target result</i>\n\n',
-        _compact_quote(f"{title} · {escape(chat_type)}"),
-        _section("✦ TARGET RESULT", target_body, open_=True),
-        "\n",
-        _section("⌁ ACCOUNT TOTAL • TODAY", account_body),
-        "\n",
-        _compact_quote(
-            f"This report is scoped to <b>{title}</b>. "
-            "Other channels/groups are not merged into this target result."
-        ),
+        f'<b>{_user_emoji("🎉", premium)} <b>ACCEPT COMPLETE</b></b>\n',
+        f'{_user_emoji("📣", premium)} <b>Target:</b> {title}\n{_user_emoji("🗂", premium)} <b>Type:</b> {escape(chat_type)}\n',
+        '<details open><summary><b>TARGET RESULT</b></summary>',
+        rich_table(["Metric", "Result"], [
+            (f'{_user_emoji("📨", premium)} Attempted', result['attempted']),
+            (f'{_user_emoji("✅", premium)} Success', result['success']),
+            (f'{_user_emoji("💀", premium)} Dead', result['dead']),
+            (f'{_user_emoji("⚠️", premium)} Error', result['error']),
+            (f'{_user_emoji("⏱", premium)} Time', f"{seconds}s"),
+        ], raw=True),
+        '</details>',
+        '<details><summary><b>TODAY • THIS ACCOUNT ONLY</b></summary>',
+        rich_table(["Metric", "Count"], [
+            (f'{_user_emoji("📊", premium)} Total', stats.get('total', 0)),
+            (f'{_user_emoji("✅", premium)} Success', stats.get('success', 0)),
+            (f'{_user_emoji("💀", premium)} Dead', stats.get('dead', 0)),
+            (f'{_user_emoji("⚠️", premium)} Error', stats.get('error', 0)),
+        ], raw=True),
+        '</details>',
+        f'{_user_emoji("🔒", premium)} This report is scoped to <b>{title}</b>; other channels/groups are not merged into this target report.\n',
         rich_button_row(
             rich_button("Stats", emoji="📊", data="cmd:stats", style="primary", premium=premium),
-            rich_button("Accept Again", emoji="🚀", data="cmd:accept", style="link", premium=premium),
+            rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
         ),
-        "\n",
-        _footer(premium),
     ])
 
 
 def build_progress_html(attempted, success, dead, error, elapsed, premium=True):
-    progress_body = rich_table(
-        ["Metric", "Live"],
-        [
+    return "".join([
+        f'<b>{_user_emoji("⚡", premium)} <b>PROCESSING JOIN REQUESTS</b></b>\n',
+        rich_table(["Metric", "Live"], [
             (f'{_user_emoji("📨", premium)} Attempted', attempted),
             (f'{_user_emoji("✅", premium)} Success', success),
             (f'{_user_emoji("💀", premium)} Dead', dead),
             (f'{_user_emoji("⚠️", premium)} Error', error),
             (f'{_user_emoji("⏱", premium)} Elapsed', f"{elapsed}s"),
-        ],
-        raw=True,
-    )
-
-    return "".join([
-        f'{_user_emoji("⚡", premium)} <b>PROCESSING JOIN REQUESTS</b>\n',
-        _micro('<i>Live progress · selected target only</i>') + '<br><br>',
-        _compact_quote("The counters below update while requests are being processed."),
-        progress_body,
-        "\n",
-        _footer(premium),
+        ], raw=True),
     ])
+
 
 def _fallback_action(premium, title, body):
     r = RichText(premium)
