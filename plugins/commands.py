@@ -42,7 +42,7 @@ if len(SLIDES) < 6:
 
 def start_keyboard(username):
     """Fallback only. The normal UI uses native Rich Message buttons."""
-    username = (username or "VJJoinRequestBot").lstrip("@")
+    username = (username or "RequestApprovalBot").lstrip("@")
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("➕ Add To Channel", url=f"https://t.me/{username}?startchannel=true"),
@@ -50,11 +50,11 @@ def start_keyboard(username):
         ],
         [
             InlineKeyboardButton("❓ Help", callback_data="cmd:help"),
-            InlineKeyboardButton("🆘 Support", url="https://t.me/vj_bot_disscussion"),
+            InlineKeyboardButton("🤖 Shop", url="https://t.me/shopsynax"),
         ],
         [
-            InlineKeyboardButton("📢 Update Channel", url="https://t.me/VJ_Botz"),
-            InlineKeyboardButton("👥 Support Group", url="https://t.me/vj_bot_disscussion"),
+            InlineKeyboardButton("📢 Update Channel", url="https://t.me/SynaxBotz"),
+            InlineKeyboardButton("📢 Support Group", url="https://t.me/SynaxSupport"),
         ],
     ])
 
@@ -65,7 +65,7 @@ def _slide_html():
         if not url.startswith(("https://", "http://")):
             continue
         images.append(f'<img src="{escape(url, quote=True)}"/>')
-    return f'<tg-slideshow>{"".join(images)}<figcaption>VJ Join Request Acceptor • Swipe to explore</figcaption></tg-slideshow>'
+    return f'<tg-slideshow>{"".join(images)}<figcaption>Synax Join Request Acceptor • Swipe to explore</figcaption></tg-slideshow>'
 
 
 def _user_emoji(emoji, enabled):
@@ -73,7 +73,7 @@ def _user_emoji(emoji, enabled):
 
 
 def _rich_nav_buttons(username, enabled):
-    username = (username or "VJJoinRequestBot").lstrip("@")
+    username = (username or "RequestApprovalBot").lstrip("@")
     return "".join([
         rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username}?startchannel=true", style="success", premium=enabled),
         rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username}?startgroup=true", style="success", premium=enabled),
@@ -82,7 +82,7 @@ def _rich_nav_buttons(username, enabled):
 
 def build_start_html(name, username, premium=True):
     n = escape(name or "there")
-    title = f'{_user_emoji("💎", premium)} <b>VJ JOIN REQUEST HUB</b>'
+    title = f'{_user_emoji("💎", premium)} <b>SYNAX JOIN REQUEST HUB</b>'
     feature_rows = [
         (_user_emoji("🚀", premium), "Fast pending-request approval"),
         (_user_emoji("🔗", premium), "Channel + Group workflow"),
@@ -94,9 +94,9 @@ def build_start_html(name, username, premium=True):
     html = [
         _slide_html(),
         f'<b>{title}</b>\n',
-        f'<i>Fast • clean • secure join-request processing</i>',
-        f'{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',
-        'Manage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
+        f'\n<i>Fast • clean • secure join-request processing</i>',
+        f'\n{_user_emoji("👋", premium)} Welcome, <b>{n}</b>!\n',
+        '\n\nManage pending join requests from your own Telegram account with a structured, swipeable and interactive interface.\n',
         '<details open><summary><b>LIVE FEATURES</b></summary>',
         rich_table(["Feature", "What it does"], rows, raw=True),
         '</details>',
@@ -111,22 +111,22 @@ def build_start_html(name, username, premium=True):
         '<b>All main actions are now inside Telegram Rich Message buttons.</b>\n',
         rich_button_row(*[
             rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
-            rich_button("Support", emoji="🆘", kind="url", url="https://t.me/vj_bot_disscussion", style="link", premium=premium),
+            rich_button("Shop", emoji="🤖", kind="url", url="https://t.me/ShopSynax", style="primary", premium=premium),
         ]),
         rich_button_row(*[
-            rich_button("Update Channel", emoji="📢", kind="url", url="https://t.me/VJ_Botz", style="link", premium=premium),
-            rich_button("Support Group", emoji="👥", kind="url", url="https://t.me/vj_bot_disscussion", style="link", premium=premium),
+            rich_button("Update Channel", emoji="📢", kind="url", url="https://t.me/synaxbotz", style="success", premium=premium),
+            rich_button("Support Group", emoji="📢", kind="url", url="https://t.me/synaxsupport", style="success", premium=premium),
         ]),
         rich_button_row(*[
-            rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startchannel=true", style="success", premium=premium),
-            rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startgroup=true", style="success", premium=premium),
+            rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startchannel=true", style="danger", premium=premium),
+            rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username.lstrip('@')}?startgroup=true", style="danger", premium=premium),
         ]),
     ]
     return "".join(html)
 
 
 def build_help_html(username, premium=True):
-    username = (username or "VJJoinRequestBot").lstrip("@")
+    username = (username or "RequestApprovalBot").lstrip("@")
     return "".join([
         '<b>', _user_emoji("❓", premium), ' <b>HELP • CONTROL CENTER</b></b>\n',
         '<i>The old Login / Accept / Stats row is intentionally moved here.</i>\n',
@@ -151,15 +151,15 @@ def build_help_html(username, premium=True):
         rich_button_row(
             rich_button("Login", emoji="🔐", data="cmd:login", style="success", premium=premium),
             rich_button("Accept", emoji="🚀", data="cmd:accept", style="primary", premium=premium),
-            rich_button("Stats", emoji="📊", data="cmd:stats", style="link", premium=premium),
+            rich_button("Stats", emoji="📊", data="cmd:stats", style="danger", premium=premium),
         ),
         rich_button_row(
             rich_button("Add To Channel", emoji="➕", kind="url", url=f"https://t.me/{username}?startchannel=true", style="success", premium=premium),
             rich_button("Add To Group", emoji="➕", kind="url", url=f"https://t.me/{username}?startgroup=true", style="success", premium=premium),
         ),
         rich_button_row(
-            rich_button("Support", emoji="🆘", kind="url", url="https://t.me/vj_bot_disscussion", style="link", premium=premium),
-            rich_button("Updates", emoji="📢", kind="url", url="https://t.me/VJ_Botz", style="link", premium=premium),
+            rich_button("Support", emoji="📢", kind="url", url="https://t.me/SynaxSupport", style="danger", premium=premium),
+            rich_button("Updates", emoji="📢", kind="url", url="https://t.me/SynaxBotz", style="danger", premium=premium),
         ),
     ])
 
@@ -168,7 +168,7 @@ def build_action_html(title, body, premium=True):
     return "".join([
         f'<b>{_user_emoji("🚀" if "Accept" in title else "🔐", premium)} <b>{escape(title)}</b></b>\n',
         f'{escape(body)}\n',
-        rich_button_row(rich_button("Help", emoji="❓", data="cmd:help", style="link", premium=premium)),
+        rich_button_row(rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium)),
     ])
 
 
@@ -219,7 +219,7 @@ def build_accept_report_html(result, seconds, chat_title, chat_type, stats, prem
         '</details>',
         f'{_user_emoji("🔒", premium)} This report is scoped to <b>{title}</b>; other channels/groups are not merged into this target report.\n',
         rich_button_row(
-            rich_button("Stats", emoji="📊", data="cmd:stats", style="link", premium=premium),
+            rich_button("Stats", emoji="📊", data="cmd:stats", style="primary", premium=premium),
             rich_button("Help", emoji="❓", data="cmd:help", style="primary", premium=premium),
         ),
     ])
@@ -274,7 +274,7 @@ async def start_message(c, m):
     enabled = await premium_enabled(db)
     html = build_start_html(m.from_user.first_name or "there", c.username, enabled)
     fallback = RichText(enabled)
-    fallback.line("💎 VJ JOIN REQUEST HUB", MessageEntityType.BOLD)
+    fallback.line("💎 SYNAX JOIN REQUEST HUB", MessageEntityType.BOLD)
     fallback.line("")
     fallback.line(f"👋 Welcome {m.from_user.first_name or 'there'}!")
     fallback.line("Open Help for Login, Accept and Stats.")
@@ -451,7 +451,7 @@ async def approve_new(client, m):
         try:
             await client.send_message(
                 m.from_user.id,
-                f"<b>✅ Your join request for {escape(m.chat.title or 'the chat')} was accepted.</b>\n\nPowered By @VJ_Botz",
+                f"<b>✅ Your join request for {escape(m.chat.title or 'the chat')} was accepted.</b>\n\nPowered By @SynaxBotz",
             )
         except Exception:
             pass
